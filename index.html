@@ -1312,11 +1312,66 @@ PBX.Alarm = {
 
   startCheck(){
     if(this.checkInterval) return;
+    // Record last check timestamp for catch-up detection
+    this._lastCheckTime = Date.now();
     this.checkInterval = setInterval(()=> this.check(), 1000);
-    // Also check on visibility change (tab comes back)
+    // When page becomes visible again, catch up any missed alarms
     document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden) this.check();
+      if(!document.hidden){
+        this.catchUpMissed();
+      }
     });
+  },
+
+  // Catch-up: scan all time points between lastCheck and now
+  // Fire any alarms that should have triggered but were missed
+  catchUpMissed(){
+    const now = new Date();
+    const last = new Date(this._lastCheckTime);
+    const alarms = PBX.Storage.getAlarms();
+    let firedAny = false;
+
+    alarms.forEach(a=>{
+      if(!a.enabled) return;
+      // Check snooze
+      if(a.snoozeUntil){
+        const sd = new Date(a.snoozeUntil);
+        if(now >= sd){
+          this.fireAlarm(a);
+          a.snoozeUntil = null;
+          firedAny = true;
+        }
+        return;
+      }
+      // Check if alarm time falls within [lastCheckTime, now]
+      // Build the exact alarm datetime for today
+      const alarmToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), a.hour, a.minute, 0);
+      
+      // Only care about alarms that were supposed to fire today
+      // and whose time is between last check and now
+      if(alarmToday >= last && alarmToday <= now){
+        const triggerKey = `${a.hour}:${a.minute}:${PBX.today()}`;
+        if(a.triggered && a.triggered.includes(triggerKey)) return;
+
+        // Check repeat rules
+        const curDay = now.getDay() || 7;
+        let shouldFire = false;
+        if(a.repeat === 'once') shouldFire = true;
+        else if(a.repeat === 'daily') shouldFire = true;
+        else if(a.repeat === 'weekly' && a.weekDays && a.weekDays.includes(curDay)) shouldFire = true;
+        else if(a.repeat === 'workday' && curDay >= 1 && curDay <= 5) shouldFire = true;
+
+        if(shouldFire){
+          this.fireAlarm(a);
+          a.triggered.push(triggerKey);
+          if(a.repeat === 'once') a.enabled = false;
+          firedAny = true;
+        }
+      }
+    });
+
+    if(firedAny) PBX.Storage.setAlarms(alarms);
+    this._lastCheckTime = Date.now();
   },
 
   check(){
@@ -1325,6 +1380,7 @@ PBX.Alarm = {
     const curMin = now.getMinutes();
     const curDay = now.getDay() || 7; // 1=Mon..7=Sun
     const alarms = PBX.Storage.getAlarms();
+    this._lastCheckTime = Date.now();
 
     alarms.forEach(a=>{
       if(!a.enabled) return;
@@ -1374,32 +1430,40 @@ PBX.Alarm = {
     document.getElementById('alarmPopup').classList.add('show');
     // Play beep sound using Web Audio API
     this.playBeep();
-    // Also try Notification API if permitted
+    // Also try Notification API if permitted - this works even when page is in background
     if('Notification' in window && Notification.permission === 'granted'){
-      new Notification(`PBX提醒: ${a.name}`, {body: a.note||`${a.hour}:${a.minute}`, icon:''});
+      try{
+        new Notification(`⏰ PBX提醒: ${a.name}`, {
+          body: `${String(a.hour).padStart(2,'0')}:${String(a.minute).padStart(2,'0')}${a.note?' - '+a.note:''}`,
+          tag: 'pbx-alarm-'+a.id,
+          requireInteraction: true,
+          icon: 'app-icon-192.png'
+        });
+      }catch(e){}
     }
   },
 
   playBeep(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Resume context if suspended (happens after page was hidden)
+      if(ctx.state === 'suspended') ctx.resume();
+      
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.frequency.value = 800;
-      osc.type = 'sine';
-      gain.gain.value = 0.3;
+      osc.frequency.value = 880;
+      osc.type = 'square';
+      gain.gain.value = 0.4;
       osc.start();
-      // Beep pattern: 3 short beeps
+      // Loud alarm pattern: 5 beeps over 3 seconds
       let t = ctx.currentTime;
-      gain.gain.setValueAtTime(0.3, t);
-      gain.gain.setValueAtTime(0, t+0.15);
-      gain.gain.setValueAtTime(0.3, t+0.3);
-      gain.gain.setValueAtTime(0, t+0.45);
-      gain.gain.setValueAtTime(0.3, t+0.6);
-      gain.gain.setValueAtTime(0, t+0.75);
-      osc.stop(t+1);
+      for(let i=0;i<5;i++){
+        gain.gain.setValueAtTime(0.4, t + i*0.6);
+        gain.gain.setValueAtTime(0, t + i*0.6 + 0.3);
+      }
+      osc.stop(t + 3.5);
     }catch(e){}
   },
 
