@@ -284,6 +284,12 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--pink);bo
    PBX - 每日工作台 应用逻辑
    ======================================== */
 const PBX = {};
+PBX._confirmCallbacks = {};
+PBX._runConfirm = function(cbId){
+  const cb = PBX._confirmCallbacks[cbId];
+  if(cb) cb();
+  delete PBX._confirmCallbacks[cbId];
+};
 
 // === Utility ===
 PBX.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -402,7 +408,9 @@ PBX.Modal = {
     this.show(`<div class="modal-title">提示</div><p style="text-align:center;font-size:14px">${msg}</p><div class="modal-actions"><button class="btn btn-primary" onclick="PBX.Modal.hide()">确定</button></div>`);
   },
   confirm(msg, onYes){
-    this.show(`<div class="modal-title">确认</div><p style="text-align:center;font-size:14px">${msg}</p><div class="modal-actions"><button class="btn btn-outline" onclick="PBX.Modal.hide()">取消</button><button class="btn btn-primary" onclick="PBX.Modal.hide();(${onYes.toString()})()">确定</button></div>`);
+    const cbId = 'cb_'+PBX.uid();
+    PBX._confirmCallbacks[cbId] = onYes;
+    this.show(`<div class="modal-title">确认</div><p style="text-align:center;font-size:14px">${msg}</p><div class="modal-actions"><button class="btn btn-outline" onclick="PBX.Modal.hide()">取消</button><button class="btn btn-danger" onclick="PBX.Modal.hide();PBX._runConfirm('${cbId}')">确认删除</button></div>`);
   },
   toast(msg, duration=2000){
     const el = document.getElementById('toastMsg');
