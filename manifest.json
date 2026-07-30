@@ -2,20 +2,20 @@
   "name": "PBX - 每日工作台",
   "short_name": "PBX",
   "description": "个人每日工作台：计划、运动、复盘、提醒四合一",
-  "start_url": "/index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffe4e6",
   "theme_color": "#ffc0cb",
   "icons": [
     {
-      "src": "/app-icon-192.png",
+      "src": "app-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/app-icon-512.png",
+      "src": "app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
