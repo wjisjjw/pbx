@@ -1262,6 +1262,7 @@ PBX.Alarm = {
     PBX.Storage.setAlarms(alarms);
     this._repeatVal = 'once';
     this._weekDays = [];
+    this.syncToSW();
     this.render();
   },
 
@@ -1271,6 +1272,7 @@ PBX.Alarm = {
     if(!a) return;
     a.enabled = !a.enabled;
     PBX.Storage.setAlarms(alarms);
+    this.syncToSW();
     this.render();
   },
 
@@ -1319,8 +1321,20 @@ PBX.Alarm = {
     document.addEventListener('visibilitychange',()=>{
       if(!document.hidden){
         this.catchUpMissed();
+        this.syncToSW(); // Re-sync alarms when page comes back
       }
     });
+  },
+
+  // Sync alarm data to Service Worker so it can check even when page is hidden
+  syncToSW(){
+    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+      const alarms = PBX.Storage.getAlarms();
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SYNC_ALARMS',
+        alarms: alarms
+      });
+    }
   },
 
   // Catch-up: scan all time points between lastCheck and now
@@ -1692,12 +1706,30 @@ PBX.Backup = {
 
 // === PWA ===
 PBX.initPWA = function(){
-  // Register Service Worker
+  // Register Service Worker with relative path
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sw.js').then(reg=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
       console.log('SW registered:', reg.scope);
+      // Immediately sync alarm data to SW
+      PBX.Alarm.syncToSW();
+      // Keep syncing every 30 seconds
+      setInterval(()=> PBX.Alarm.syncToSW(), 30000);
     }).catch(err=>{
       console.log('SW registration failed:', err);
+    });
+
+    // Listen for messages from SW (notification click → show popup)
+    navigator.serviceWorker.addEventListener('message', event=>{
+      if(event.data && event.data.type === 'ALARM_CLICKED'){
+        const alarmId = event.data.alarmId;
+        if(alarmId){
+          const alarms = PBX.Storage.getAlarms();
+          const a = alarms.find(a=>a.id===alarmId);
+          if(a){
+            PBX.Alarm.fireAlarm(a);
+          }
+        }
+      }
     });
   }
 
@@ -1706,7 +1738,6 @@ PBX.initPWA = function(){
   window.addEventListener('beforeinstallprompt', (e)=>{
     e.preventDefault();
     deferredPrompt = e;
-    // Show install banner after 3 seconds
     setTimeout(()=>{
       if(deferredPrompt){
         const banner = document.createElement('div');
