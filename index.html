@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PBX">
+<meta name="theme-color" content="#ffc0cb">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>PBX - 每日工作台</title>
+<style>
+:root{--pink:#ffc0cb;--bg:#ffe4e6;--text:#2a5a3a;--card:#ffffff;--active:#c6e6c8;--pink-deep:#e8758a;--pink-mid:#f0a0b0;--green-light:#b8d8ba;--green-mid:#7ab87e;--green-deep:#4a8a4e;--shadow:0 2px 8px rgba(0,0,0,.08);--radius:12px;--radius-sm:8px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--text)}
+body{display:flex;flex-direction:row}
+
+/* === SIDEBAR === */
+.sidebar{width:28%;min-width:80px;max-width:120px;height:100%;background:#fff;display:flex;flex-direction:column;border-right:1px solid var(--pink);overflow-y:auto;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0}
+.sidebar-logo{padding:12px 8px;text-align:center;font-size:18px;font-weight:700;color:var(--pink-deep);letter-spacing:2px;border-bottom:2px solid var(--pink)}
+.sidebar-nav{flex:1;display:flex;flex-direction:column;gap:2px;padding:8px 4px}
+.nav-item{display:flex;align-items:center;gap:6px;padding:10px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:500;transition:all .2s;min-height:44px}
+.nav-item .nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-item:hover{background:var(--pink);opacity:.7}
+.nav-item.active{background:var(--active);color:var(--text);font-weight:600}
+.sidebar-bottom{padding:8px 4px;border-top:1px solid #eee;display:flex;flex-direction:column;gap:2px}
+.sidebar-bottom .nav-item{font-size:11px}
+
+/* === MAIN === */
+.main{flex:1;height:100%;overflow-y:auto;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom) 12px;background:var(--bg)}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
+
+/* === COMMON === */
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 16px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;min-height:36px}
+.btn-primary{background:var(--pink);color:#fff}.btn-primary:hover{background:var(--pink-mid)}
+.btn-green{background:var(--active);color:var(--text)}.btn-green:hover{background:var(--green-mid)}
+.btn-danger{background:#f8d7da;color:#721c24}.btn-danger:hover{background:#f5c6cb}
+.btn-sm{padding:4px 10px;font-size:11px;min-height:28px}
+.btn-outline{background:transparent;border:1px solid var(--pink);color:var(--pink-deep)}
+input[type=text],input[type=number],input[type=time],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:var(--radius-sm);font-size:13px;background:#fff;color:var(--text);min-height:36px}
+textarea{resize:vertical;min-height:80px}
+select{appearance:auto}
+.form-group{margin-bottom:10px}
+.form-label{font-size:12px;font-weight:500;margin-bottom:4px;display:block}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.tag-high{background:#f8d7da;color:#721c24}
+.tag-mid{background:#fff3cd;color:#856404}
+.tag-low{background:#d4edda;color:#155724}
+.tag-pending{background:#e2e3e5;color:#383d41}
+.tag-progress{background:#cce5ff;color:#004085}
+.tag-done{background:#d4edda;color:#155724}
+
+/* === MODAL === */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:var(--radius);padding:20px;width:90%;max-width:400px;max-height:85vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:16px;text-align:center}
+.modal-actions{display:flex;gap:8px;justify-content:center;margin-top:16px}
+
+/* === PLAN MODULE === */
+.plan-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.plan-progress{display:flex;align-items:center;gap:10px}
+.progress-ring{width:50px;height:50px}
+.progress-text{font-size:13px;font-weight:500}
+.view-toggle{display:flex;gap:4px}
+.view-toggle .btn{padding:4px 10px;font-size:11px}
+
+/* Calendar */
+.calendar{margin-bottom:12px}
+.cal-header{display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-bottom:8px}
+.cal-header .btn-sm{padding:2px 8px;font-size:10px}
+.cal-month{font-size:14px;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.cal-day-name{text-align:center;font-size:10px;padding:2px 0;color:#888;font-weight:500}
+.cal-day{text-align:center;padding:4px 1px;border-radius:4px;font-size:11px;cursor:pointer;position:relative;min-height:32px;transition:background .2s}
+.cal-day:hover{background:var(--pink);opacity:.5}
+.cal-day.today{background:var(--active);font-weight:600}
+.cal-day.selected{background:var(--pink);color:#fff;font-weight:600}
+.cal-day.other-month{color:#aaa}
+.cal-dot{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);display:flex;gap:1px}
+.cal-dot span{width:4px;height:4px;border-radius:50%;display:inline-block}
+.cal-dot .d1{background:var(--pink)}
+.cal-dot .d2{background:var(--pink-mid)}
+.cal-dot .d3{background:var(--pink-deep)}
+
+/* Week view */
+.week-view{display:none}
+.week-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
+.week-col{text-align:center;padding:6px 2px;border-radius:var(--radius-sm);background:#f8f9fa;cursor:pointer;font-size:11px}
+.week-col.today{background:var(--active)}
+.week-col.selected{background:var(--pink);color:#fff}
+.week-col .wc-count{font-size:10px;color:#888;margin-top:2px}
+
+/* Timeline */
+.timeline{margin-bottom:12px}
+.timeline-header{font-size:13px;font-weight:600;margin-bottom:6px}
+.timeline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.tl-slot{padding:6px 4px;border-radius:var(--radius-sm);background:#f8f9fa;font-size:10px;cursor:pointer;min-height:44px;transition:background .2s;position:relative}
+.tl-slot:hover{background:var(--pink);opacity:.6}
+.tl-slot .tl-time{font-weight:600;color:#888}
+.tl-slot .tl-task{font-size:9px;color:var(--text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-slot.has-task{background:var(--active)}
+
+/* Task list */
+.task-list{margin-bottom:12px}
+.task-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);background:#f8f9fa;margin-bottom:6px;min-height:44px;cursor:pointer;transition:all .2s}
+.task-item:hover{background:#eee}
+.task-item.completed{opacity:.7;background:#d4edda}
+.task-check{width:20px;height:20px;border-radius:50%;border:2px solid #ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.task-check.checked{background:var(--green-mid);border-color:var(--green-mid);color:#fff;font-size:12px}
+.task-info{flex:1;min-width:0}
+.task-text{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-meta{display:flex;gap:4px;margin-top:2px;align-items:center}
+.task-status-btn{padding:2px 6px;border-radius:8px;font-size:10px;cursor:pointer;border:1px solid #ddd;background:#fff}
+.task-actions{display:flex;gap:4px;flex-shrink:0}
+
+/* === SPORT MODULE === */
+.sport-stats{display:flex;gap:12px;margin-bottom:12px}
+.sport-stat{flex:1;text-align:center;padding:8px;border-radius:var(--radius-sm);background:#f8f9fa}
+.sport-stat-val{font-size:20px;font-weight:700;color:var(--pink-deep)}
+.sport-stat-label{font-size:10px;color:#888}
+.sport-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.sport-card{padding:12px;border-radius:var(--radius-sm);background:#f8f9fa;text-align:center;cursor:pointer;transition:all .2s;min-height:44px}
+.sport-card:hover{background:var(--pink);opacity:.7}
+.sport-card.selected{background:var(--active);font-weight:600}
+.sport-card .sport-icon{font-size:24px;margin-bottom:4px}
+.sport-card .sport-name{font-size:12px}
+.sport-form{display:none;margin-bottom:12px}
+.sport-form.show{display:block}
+.sport-heatmap{margin-bottom:12px}
+.heatmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.heatmap-cell{aspect-ratio:1;border-radius:4px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#888;position:relative}
+.heatmap-cell.lv1{background:#c6e6c8;color:var(--text)}
+.heatmap-cell.lv2{background:#7ab87e;color:#fff}
+.heatmap-cell.lv3{background:#4a8a4e;color:#fff}
+.heatmap-cell.lv4{background:#2a5a3a;color:#fff}
+.heatmap-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:4px}
+.heatmap-label{text-align:center;font-size:9px;color:#888}
+.sport-log{margin-bottom:12px}
+.sport-log-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:var(--radius-sm);background:#f8f9fa;margin-bottom:4px;font-size:12px}
+
+/* === REVIEW MODULE === */
+.review-selector{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.review-week-nav{display:flex;align-items:center;gap:8px}
+.review-week-label{font-size:14px;font-weight:600}
+.review-field{margin-bottom:12px}
+.review-field-title{font-size:12px;font-weight:600;margin-bottom:4px;color:var(--pink-deep)}
+.review-field textarea{min-height:60px}
+.review-images{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.review-img-thumb{width:60px;height:60px;border-radius:var(--radius-sm);object-fit:cover;cursor:pointer;border:1px solid #ddd}
+.review-date-links{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.review-date-link{padding:4px 8px;border-radius:10px;background:var(--pink);color:#fff;font-size:11px;cursor:pointer}
+
+/* === ALARM MODULE === */
+.alarm-form{margin-bottom:12px}
+.alarm-form-row{display:flex;gap:8px;align-items:center}
+.alarm-form-row input[type=time]{flex:1}
+.alarm-repeat-options{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.alarm-repeat-opt{padding:4px 8px;border-radius:10px;font-size:11px;cursor:pointer;border:1px solid #ddd;background:#fff}
+.alarm-repeat-opt.selected{background:var(--active);border-color:var(--green-mid)}
+.alarm-weekday-picks{display:flex;gap:4px;margin-top:6px}
+.alarm-wd{width:28px;height:28px;border-radius:50%;text-align:center;font-size:10px;cursor:pointer;border:1px solid #ddd;background:#fff;display:flex;align-items:center;justify-content:center}
+.alarm-wd.selected{background:var(--pink);color:#fff;border-color:var(--pink-deep)}
+.alarm-section{margin-bottom:12px}
+.alarm-section-title{font-size:12px;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.alarm-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);background:#f8f9fa;margin-bottom:4px;min-height:44px}
+.alarm-item .alarm-check{width:18px;height:18px;flex-shrink:0}
+.alarm-item .alarm-info{flex:1;min-width:0}
+.alarm-item .alarm-time{font-size:14px;font-weight:600}
+.alarm-item .alarm-name{font-size:12px}
+.alarm-item .alarm-note{font-size:10px;color:#888}
+.alarm-toggle{width:40px;height:22px;border-radius:11px;background:#ccc;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.alarm-toggle.on{background:var(--green-mid)}
+.alarm-toggle .toggle-dot{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s}
+.alarm-toggle.on .toggle-dot{left:20px}
+.alarm-batch-actions{display:flex;gap:8px;margin-top:8px}
+.alarm-empty{text-align:center;padding:20px;color:#888;font-size:13px}
+
+/* Alarm popup */
+.alarm-popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:2000;justify-content:center;align-items:center}
+.alarm-popup.show{display:flex}
+.alarm-popup-inner{background:#fff;border-radius:var(--radius);padding:24px;width:90%;max-width:360px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+.alarm-popup-icon{font-size:48px;margin-bottom:8px}
+.alarm-popup-time{font-size:24px;font-weight:700;color:var(--pink-deep);margin-bottom:4px}
+.alarm-popup-name{font-size:16px;margin-bottom:4px}
+.alarm-popup-note{font-size:12px;color:#888;margin-bottom:16px}
+.alarm-popup-btns{display:flex;gap:8px;justify-content:center}
+
+/* === ANALYSIS PANEL === */
+.analysis-card{margin-bottom:12px}
+.analysis-metric{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee;font-size:13px}
+.analysis-metric:last-child{border-bottom:none}
+.analysis-metric .am-label{color:#888}
+.analysis-metric .am-val{font-weight:600}
+.insight-item{padding:8px 10px;border-radius:var(--radius-sm);margin-bottom:6px;font-size:12px;display:flex;gap:6px;align-items:center}
+.insight-item.good{background:#d4edda;color:#155724}
+.insight-item.warn{background:#fff3cd;color:#856404}
+.insight-item.alert{background:#f8d7da;color:#721c24}
+
+/* === RESPONSIVE === */
+@media(max-width:600px){
+.sidebar{min-width:60px;max-width:80px}
+.nav-item{flex-direction:column;gap:2px;padding:8px 4px;font-size:10px}
+.nav-item .nav-icon{font-size:14px}
+.sidebar-logo{font-size:14px;padding:8px 4px}
+.main{padding:8px}
+.card{padding:12px;margin-bottom:8px}
+.timeline-grid{grid-template-columns:repeat(3,1fr)}
+.sport-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:380px){
+.sidebar{min-width:50px;max-width:60px}
+.nav-item{padding:6px 2px;font-size:9px}
+}
+
+/* Scrollbar & transitions */
+.main::-webkit-scrollbar{width:3px}
+.main::-webkit-scrollbar-thumb{background:var(--pink);border-radius:2px}
+.sidebar::-webkit-scrollbar{width:2px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--pink);border-radius:2px}
+.card{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 2px rgba(255,192,203,.3)}
+
+/* Toast notification */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--green-mid);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:3000;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">PBX</div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-panel="plan"><span class="nav-icon">📋</span>计划</div>
+    <div class="nav-item" data-panel="sport"><span class="nav-icon">🏃</span>运动</div>
+    <div class="nav-item" data-panel="review"><span class="nav-icon">📝</span>复盘</div>
+    <div class="nav-item" data-panel="alarm"><span class="nav-icon">⏰</span>提醒</div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="nav-item" data-action="analysis"><span class="nav-icon">📊</span>分析</div>
+    <div class="nav-item" data-action="backup"><span class="nav-icon">💾</span>备份</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="mainContent">
+  <!-- Plan Panel -->
+  <div class="panel active" id="panelPlan"></div>
+  <!-- Sport Panel -->
+  <div class="panel" id="panelSport"></div>
+  <!-- Review Panel -->
+  <div class="panel" id="panelReview"></div>
+  <!-- Alarm Panel -->
+  <div class="panel" id="panelAlarm"></div>
+</div>
+
+<!-- Modal Overlay -->
+<div class="modal-overlay" id="modalOverlay"></div>
+<!-- Toast -->
+<div class="toast" id="toastMsg"></div>
+<!-- Alarm Popup -->
+<div class="alarm-popup" id="alarmPopup">
+  <div class="alarm-popup-inner">
+    <div class="alarm-popup-icon">⏰</div>
+    <div class="alarm-popup-time" id="apTime"></div>
+    <div class="alarm-popup-name" id="apName"></div>
+    <div class="alarm-popup-note" id="apNote"></div>
+    <div class="alarm-popup-btns">
+      <button class="btn btn-green" onclick="PBX.Alarm.dismissPopup()">知道了</button>
+      <button class="btn btn-primary" onclick="PBX.Alarm.snoozePopup()">延时10分钟</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========================================
+   PBX - 每日工作台 应用逻辑
+   ======================================== */
+const PBX = {};
+
+// === Utility ===
+PBX.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+PBX.today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+PBX.dateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+PBX.getWeekId = (d) => {
+  const dt = new Date(d);
+  const dayNum = dt.getDay() || 7;
+  dt.setDate(dt.getDate() + 4 - dayNum);
+  const yearStart = new Date(dt.getFullYear(),0,1);
+  const wn = Math.ceil((((dt - yearStart) / 86400000) + 1)/7);
+  return `${dt.getFullYear()}-W${String(wn).padStart(2,'0')}`;
+};
+PBX.getWeekDates = (weekId) => {
+  const [y, w] = weekId.split('-W');
+  const wn = parseInt(w);
+  const jan4 = new Date(y, 0, 4);
+  const dayNum = jan4.getDay() || 7;
+  const mon = new Date(jan4);
+  mon.setDate(jan4.getDate() - dayNum + 1 + (wn-1)*7);
+  const dates = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(mon);
+    d.setDate(mon.getDate()+i);
+    dates.push(PBX.dateStr(d));
+  }
+  return dates;
+};
+PBX.parseDate = (s) => { const [y,m,d]=s.split('-'); return new Date(y,m-1,d); };
+PBX.isSameDay = (a,b) => a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+PBX.weekDayNames = ['一','二','三','四','五','六','日'];
+
+// === Storage ===
+PBX.Storage = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)) || null; }catch(e){ return null; } },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); },
+  remove(k){ localStorage.removeItem(k); },
+  getSize(){
+    let s=0;
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('pbx_')) s+=localStorage.getItem(k).length;
+    }
+    return s;
+  },
+  checkQuota(){
+    const size = this.getSize();
+    if(size > 4*1024*1024){
+      PBX.Modal.alert('⚠️ 数据接近存储上限('+Math.round(size/1024/1024*100)/100+'MB)，建议尽快导出备份并清理历史图片。');
+    }
+  },
+  getTasks(){ return this.get('pbx_tasks') || {}; },
+  setTasks(v){ this.set('pbx_tasks',v); this.checkQuota(); },
+  getSport(){ return this.get('pbx_sport') || {}; },
+  setSport(v){ this.set('pbx_sport',v); },
+  getReview(){ return this.get('pbx_review') || {}; },
+  setReview(v){ this.set('pbx_review',v); },
+  getAlarms(){ return this.get('pbx_alarms') || []; },
+  setAlarms(v){ this.set('pbx_alarms',v); },
+  getImages(){ return this.get('pbx_images') || {}; },
+  setImages(v){ this.set('pbx_images',v); this.checkQuota(); },
+};
+
+// === Router ===
+PBX.Router = {
+  current: 'plan',
+  init(){
+    document.querySelectorAll('.nav-item[data-panel]').forEach(el=>{
+      el.addEventListener('click',()=>{
+        this.switch(el.dataset.panel);
+      });
+    });
+    document.querySelectorAll('.nav-item[data-action]').forEach(el=>{
+      el.addEventListener('click',()=>{
+        if(el.dataset.action==='analysis') PBX.Analysis.show();
+        if(el.dataset.action==='backup') PBX.Backup.show();
+      });
+    });
+  },
+  switch(panel){
+    this.current = panel;
+    document.querySelectorAll('.nav-item[data-panel]').forEach(el=>{
+      el.classList.toggle('active', el.dataset.panel===panel);
+    });
+    document.querySelectorAll('.panel').forEach(el=> el.classList.remove('active'));
+    const p = document.getElementById('panel'+panel.charAt(0).toUpperCase()+panel.slice(1));
+    if(p) p.classList.add('active');
+    PBX[panel.charAt(0).toUpperCase()+panel.slice(1)].render();
+  },
+  goToDate(dateStr){
+    PBX.Plan.selectedDate = dateStr;
+    this.switch('plan');
+  },
+  goToWeek(weekId){
+    PBX.Review.selectedWeek = weekId;
+    this.switch('review');
+  }
+};
+
+// === Modal ===
+PBX.Modal = {
+  show(html){
+    const overlay = document.getElementById('modalOverlay');
+    overlay.innerHTML = `<div class="modal">${html}</div>`;
+    overlay.classList.add('show');
+  },
+  hide(){
+    const overlay = document.getElementById('modalOverlay');
+    overlay.classList.remove('show');
+    overlay.innerHTML = '';
+  },
+  alert(msg){
+    this.show(`<div class="modal-title">提示</div><p style="text-align:center;font-size:14px">${msg}</p><div class="modal-actions"><button class="btn btn-primary" onclick="PBX.Modal.hide()">确定</button></div>`);
+  },
+  confirm(msg, onYes){
+    this.show(`<div class="modal-title">确认</div><p style="text-align:center;font-size:14px">${msg}</p><div class="modal-actions"><button class="btn btn-outline" onclick="PBX.Modal.hide()">取消</button><button class="btn btn-primary" onclick="PBX.Modal.hide();(${onYes.toString()})()">确定</button></div>`);
+  },
+  toast(msg, duration=2000){
+    const el = document.getElementById('toastMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(()=> el.classList.remove('show'), duration);
+  }
+};
+document.getElementById('modalOverlay').addEventListener('click',(e)=>{
+  if(e.target.classList.contains('modal-overlay')) PBX.Modal.hide();
+});
+
+// === PLAN MODULE ===
+PBX.Plan = {
+  selectedDate: PBX.today(),
+  calMonth: null, // {year, month}
+  viewMode: 'day', // 'day'|'week'
+  editingTask: null,
+
+  init(){
+    const d = PBX.parseDate(this.selectedDate);
+    this.calMonth = {year:d.getFullYear(), month:d.getMonth()};
+  },
+
+  render(){
+    const panel = document.getElementById('panelPlan');
+    const tasks = PBX.Storage.getTasks();
+    const dt = this.selectedDate;
+    const dayTasks = tasks[dt] || [];
+    const completed = dayTasks.filter(t=>t.status==='completed').length;
+    const total = dayTasks.length;
+    const pct = total ? Math.round(completed/total*100) : 0;
+
+    let html = '';
+
+    // Header with progress
+    html += `<div class="card">
+      <div class="plan-header">
+        <div class="plan-progress">
+          <svg class="progress-ring" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="#eee" stroke-width="4"/>
+            <circle cx="25" cy="25" r="20" fill="none" stroke="${pct>=90?'var(--green-mid)':pct>=50?'var(--pink)':'var(--pink-deep)'}" stroke-width="4" stroke-dasharray="${pct*1.26} ${126-pct*1.26}" stroke-linecap="round" transform="rotate(-90 25 25)"/>
+            <text x="25" y="29" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text)">${pct}%</text>
+          </svg>
+          <div class="progress-text">${dt}<br>完成 ${completed}/${total}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div class="view-toggle">
+            <button class="btn btn-sm ${this.viewMode==='day'?'btn-primary':'btn-outline'}" onclick="PBX.Plan.setView('day')">日</button>
+            <button class="btn btn-sm ${this.viewMode==='week'?'btn-primary':'btn-outline'}" onclick="PBX.Plan.setView('week')">周</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="PBX.Plan.showAdd()">+任务</button>
+        </div>
+      </div>
+    </div>`;
+
+    // Calendar
+    html += `<div class="card"><div class="calendar">${this.renderCalendar()}</div></div>`;
+
+    // Timeline (day view only)
+    if(this.viewMode === 'day'){
+      html += `<div class="card"><div class="timeline">
+        <div class="timeline-header">时间轴 ${dt}</div>
+        <div class="timeline-grid">${this.renderTimeline()}</div>
+      </div></div>`;
+    }
+
+    // Week overview (week view)
+    if(this.viewMode === 'week'){
+      html += `<div class="card">${this.renderWeekView()}</div>`;
+    }
+
+    // Task list
+    html += `<div class="card"><div class="card-title">任务列表</div><div class="task-list">`;
+    if(dayTasks.length === 0){
+      html += `<div style="text-align:center;padding:20px;color:#888;font-size:13px">暂无任务，点击 + 添加</div>`;
+    } else {
+      // Sort: pending first, then in_progress, then completed; within each, high priority first
+      const sorted = [...dayTasks].sort((a,b)=>{
+        const so = {pending:0,in_progress:1,completed:2};
+        const po = {high:0,mid:1,low:2};
+        return (so[a.status]||0)-(so[b.status]||0) || (po[a.priority]||0)-(po[b.priority]||0);
+      });
+      sorted.forEach(t=>{
+        const isChecked = t.status==='completed';
+        const pTag = t.priority==='high'?'tag-high':t.priority==='mid'?'tag-mid':'tag-low';
+        const sTag = t.status==='completed'?'tag-done':t.status==='in_progress'?'tag-progress':'tag-pending';
+        const sLabel = t.status==='completed'?'已完成':t.status==='in_progress'?'进行中':'待完成';
+        const slotLabel = t.timeSlot ? t.timeSlot : '';
+        html += `<div class="task-item ${isChecked?'completed':''}">
+          <div class="task-check ${isChecked?'checked':''}" onclick="PBX.Plan.toggleComplete('${t.id}')">${isChecked?'✓':''}</div>
+          <div class="task-info">
+            <div class="task-text">${t.text}</div>
+            <div class="task-meta">
+              <span class="tag ${pTag}">${t.priority==='high'?'高':t.priority==='mid'?'中':'低'}</span>
+              <span class="tag ${sTag}">${sLabel}</span>
+              ${slotLabel?`<span style="font-size:10px;color:#888">${slotLabel}</span>`:''}
+            </div>
+          </div>
+          <div class="task-actions">
+            ${!isChecked?`<button class="btn btn-sm btn-outline" onclick="PBX.Plan.cycleStatus('${t.id}')">⏩</button>`:''}
+            <button class="btn btn-sm btn-danger" onclick="PBX.Plan.deleteTask('${t.id}')">✕</button>
+          </div>
+        </div>`;
+      });
+    }
+    html += `</div></div>`;
+    panel.innerHTML = html;
+  },
+
+  renderCalendar(){
+    const tasks = PBX.Storage.getTasks();
+    const {year, month} = this.calMonth;
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month+1, 0);
+    // Monday-based: getDay() returns 0(Sun)-6(Sat), we need 0(Mon)-6(Sun)
+    let startWeekDay = (firstDay.getDay()+6)%7;
+    const today = new Date();
+    const selected = PBX.parseDate(this.selectedDate);
+    const dayNames = ['一','二','三','四','五','六','日'];
+
+    // Count tasks per day in this month for dots
+    const monthTasks = {};
+    for(let d=1;d<=lastDay.getDate();d++){
+      const ds = PBX.dateStr(new Date(year,month,d));
+      const dt = tasks[ds]||[];
+      if(dt.length>0) monthTasks[d] = dt.length;
+    }
+
+    let html = `<div class="cal-header">
+      <button class="btn btn-sm btn-outline" onclick="PBX.Plan.prevMonth()">◀</button>
+      <span class="cal-month">${year}年${month+1}月</span>
+      <button class="btn btn-sm btn-outline" onclick="PBX.Plan.nextMonth()">▶</button>
+    </div>`;
+    html += `<div class="cal-grid">`;
+    dayNames.forEach(n=> html += `<div class="cal-day-name">${n}</div>`);
+    // Empty cells before first day
+    for(let i=0;i<startWeekDay;i++){
+      html += `<div class="cal-day other-month"></div>`;
+    }
+    for(let d=1;d<=lastDay.getDate();d++){
+      const dt = new Date(year,month,d);
+      const isToday = PBX.isSameDay(dt,today);
+      const isSelected = PBX.isSameDay(dt,selected);
+      const count = monthTasks[d]||0;
+      let dotHtml = '';
+      if(count>0){
+        const level = count>=3?'d3':count>=2?'d2':'d1';
+        const numDots = Math.min(count,3);
+        for(let i=0;i<numDots;i++) dotHtml += `<span class="${level}"></span>`;
+      }
+      html += `<div class="cal-day${isToday?' today':''}${isSelected?' selected':''}" onclick="PBX.Plan.selectDate('${PBX.dateStr(dt)}')">
+        ${d}<div class="cal-dot">${dotHtml}</div>
+      </div>`;
+    }
+    html += `</div>`;
+    return html;
+  },
+
+  renderTimeline(){
+    const tasks = PBX.Storage.getTasks();
+    const dayTasks = tasks[this.selectedDate] || [];
+    const slots = [];
+    for(let h=0;h<24;h++){
+      const label = `${String(h).padStart(2,'0')}:00`;
+      const tasksInSlot = dayTasks.filter(t=>t.timeSlot===label);
+      slots.push({hour:h, label, tasks:tasksInSlot});
+    }
+    let html = '';
+    slots.forEach(s=>{
+      const hasTask = s.tasks.length > 0;
+      const taskTexts = s.tasks.map(t=>t.text).join(', ');
+      html += `<div class="tl-slot${hasTask?' has-task':''}" onclick="PBX.Plan.slotClick('${s.label}')">
+        <div class="tl-time">${s.label}</div>
+        ${hasTask?`<div class="tl-task">${taskTexts}</div>`:''}
+      </div>`;
+    });
+    return html;
+  },
+
+  renderWeekView(){
+    const tasks = PBX.Storage.getTasks();
+    const selected = PBX.parseDate(this.selectedDate);
+    // Find Monday of selected week
+    const dayOfWeek = (selected.getDay()+6)%7;
+    const monday = new Date(selected);
+    monday.setDate(selected.getDate() - dayOfWeek);
+    const weekDates = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate()+i);
+      weekDates.push(PBX.dateStr(d));
+    }
+    const today = new Date();
+
+    let html = `<div class="card-title">周概览 ${weekDates[0]} ~ ${weekDates[6]}</div>`;
+    html += `<div class="week-row">`;
+    weekDates.forEach((ds,i)=>{
+      const dt = PBX.parseDate(ds);
+      const isToday = PBX.isSameDay(dt,today);
+      const isSelected = ds===this.selectedDate;
+      const dayTasks = tasks[ds]||[];
+      const completed = dayTasks.filter(t=>t.status==='completed').length;
+      html += `<div class="week-col${isToday?' today':''}${isSelected?' selected':''}" onclick="PBX.Plan.selectDate('${ds}')">
+        <div>${PBX.weekDayNames[i]}</div>
+        <div>${dt.getDate()}</div>
+        <div class="wc-count">${completed}/${dayTasks.length}</div>
+      </div>`;
+    });
+    html += `</div>`;
+
+    // Show selected day tasks inline
+    const dayTasks = tasks[this.selectedDate]||[];
+    html += `<div style="margin-top:8px">`;
+    dayTasks.forEach(t=>{
+      const pTag = t.priority==='high'?'tag-high':t.priority==='mid'?'tag-mid':'tag-low';
+      const sTag = t.status==='completed'?'tag-done':t.status==='in_progress'?'tag-progress':'tag-pending';
+      html += `<div style="display:flex;gap:4px;align-items:center;padding:4px 0;font-size:12px">
+        <span class="tag ${pTag}">${t.priority==='high'?'高':t.priority==='mid'?'中':'低'}</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.text}</span>
+        <span class="tag ${sTag}">${t.status==='completed'?'✓':t.status==='in_progress'?'►':'○'}</span>
+      </div>`;
+    });
+    html += `</div>`;
+    return html;
+  },
+
+  setView(mode){
+    this.viewMode = mode;
+    this.render();
+  },
+
+  selectDate(ds){
+    this.selectedDate = ds;
+    const d = PBX.parseDate(ds);
+    this.calMonth = {year:d.getFullYear(), month:d.getMonth()};
+    this.render();
+  },
+
+  prevMonth(){
+    this.calMonth.month--;
+    if(this.calMonth.month<0){this.calMonth.month=11;this.calMonth.year--;}
+    this.render();
+  },
+
+  nextMonth(){
+    this.calMonth.month++;
+    if(this.calMonth.month>11){this.calMonth.month=0;this.calMonth.year++;}
+    this.render();
+  },
+
+  showAdd(timeSlot=null){
+    const slotVal = timeSlot || '';
+    PBX.Modal.show(`
+      <div class="modal-title">添加任务</div>
+      <div class="form-group"><label class="form-label">任务内容</label><input type="text" id="addTaskText" placeholder="输入任务..."></div>
+      <div class="form-group"><label class="form-label">优先级</label>
+        <select id="addTaskPriority">
+          <option value="mid">中</option>
+          <option value="high">高</option>
+          <option value="low">低</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">时间段</label>
+        <select id="addTaskSlot">
+          <option value="">无</option>
+          ${[...Array(24)].map((_,i)=>{const h=i;const l=String(h).padStart(2,'0')+':00';return `<option value="${l}"${l===slotVal?' selected':''}>${l}</option>`}).join('')}
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="PBX.Modal.hide()">取消</button>
+        <button class="btn btn-primary" onclick="PBX.Plan.addTask()">添加</button>
+      </div>
+    `);
+    document.getElementById('addTaskText').focus();
+  },
+
+  addTask(){
+    const text = document.getElementById('addTaskText').value.trim();
+    if(!text){ PBX.Modal.alert('请输入任务内容'); return; }
+    const priority = document.getElementById('addTaskPriority').value;
+    const timeSlot = document.getElementById('addTaskSlot').value;
+    const tasks = PBX.Storage.getTasks();
+    const dt = this.selectedDate;
+    if(!tasks[dt]) tasks[dt] = [];
+    tasks[dt].push({
+      id: PBX.uid(),
+      text,
+      priority,
+      status: 'pending',
+      timeSlot,
+      completedAt: null
+    });
+    PBX.Storage.setTasks(tasks);
+    PBX.Modal.hide();
+    PBX.Modal.toast('任务已添加 ✓');
+    this.render();
+  },
+
+  toggleComplete(id){
+    const tasks = PBX.Storage.getTasks();
+    const dt = this.selectedDate;
+    const task = (tasks[dt]||[]).find(t=>t.id===id);
+    if(!task) return;
+    if(task.status === 'completed'){
+      task.status = 'pending';
+      task.completedAt = null;
+    } else {
+      task.status = 'completed';
+      task.completedAt = PBX.today();
+    }
+    PBX.Storage.setTasks(tasks);
+    this.render();
+  },
+
+  cycleStatus(id){
+    const tasks = PBX.Storage.getTasks();
+    const dt = this.selectedDate;
+    const task = (tasks[dt]||[]).find(t=>t.id===id);
+    if(!task) return;
+    const cycle = {pending:'in_progress', in_progress:'completed', completed:'pending'};
+    task.status = cycle[task.status] || 'pending';
+    if(task.status==='completed') task.completedAt = PBX.today();
+    else task.completedAt = null;
+    PBX.Storage.setTasks(tasks);
+    this.render();
+  },
+
+  deleteTask(id){
+    PBX.Modal.confirm('确定删除此任务？', ()=>{
+      const tasks = PBX.Storage.getTasks();
+      const dt = PBX.Plan.selectedDate;
+      tasks[dt] = (tasks[dt]||[]).filter(t=>t.id!==id);
+      if(tasks[dt].length===0) delete tasks[dt];
+      PBX.Storage.setTasks(tasks);
+      PBX.Plan.render();
+    });
+  },
+
+  slotClick(slotLabel){
+    const tasks = PBX.Storage.getTasks();
+    const dayTasks = tasks[this.selectedDate]||[];
+    const slotTasks = dayTasks.filter(t=>t.timeSlot===slotLabel);
+    if(slotTasks.length > 0){
+      // Show slot tasks and option to add more
+      let html = `<div class="modal-title">${slotLabel} 时段任务</div>`;
+      slotTasks.forEach(t=>{
+        const sLabel = t.status==='completed'?'已完成':t.status==='in_progress'?'进行中':'待完成';
+        html += `<div style="padding:8px;border-radius:8px;background:#f8f9fa;margin-bottom:4px;display:flex;justify-content:space-between;font-size:13px">
+          <span>${t.text}</span><span class="tag ${t.status==='completed'?'tag-done':t.status==='in_progress'?'tag-progress':'tag-pending'}">${sLabel}</span>
+        </div>`;
+      });
+      html += `<div class="modal-actions"><button class="btn btn-outline" onclick="PBX.Modal.hide()">关闭</button><button class="btn btn-primary" onclick="PBX.Modal.hide();PBX.Plan.showAdd('${slotLabel}')">+添加</button></div>`;
+      PBX.Modal.show(html);
+    } else {
+      this.showAdd(slotLabel);
+    }
+  }
+};
+
+// === SPORT MODULE ===
+PBX.Sport = {
+  selectedSport: null,
+  sportList: [
+    {id:'run',name:'跑步',icon:'🏃',calPerMin:10},
+    {id:'swim',name:'游泳',icon:'🏊',calPerMin:8},
+    {id:'gym',name:'健身',icon:'💪',calPerMin:7},
+    {id:'bike',name:'骑行',icon:'🚴',calPerMin:6},
+    {id:'yoga',name:'瑜伽',icon:'🧘',calPerMin:4},
+    {id:'basketball',name:'篮球',icon:'🏀',calPerMin:9},
+    {id:'jump',name:'跳绳',icon:'⚡',calPerMin:11},
+    {id:'walk',name:'散步',icon:'🚶',calPerMin:3}
+  ],
+
+  render(){
+    const panel = document.getElementById('panelSport');
+    const sportData = PBX.Storage.getSport();
+    const todayStr = PBX.today();
+    const todayRecords = sportData[todayStr] || [];
+
+    // Calculate streak
+    const streak = this.calcStreak();
+
+    // Today stats
+    const todayCal = todayRecords.reduce((s,r)=>s+r.calories,0);
+    const todayMin = todayRecords.reduce((s,r)=>s+r.duration_min,0);
+
+    let html = '';
+
+    // Stats row
+    html += `<div class="card"><div class="sport-stats">
+      <div class="sport-stat"><div class="sport-stat-val">${streak}</div><div class="sport-stat-label">连续天数</div></div>
+      <div class="sport-stat"><div class="sport-stat-val">${todayCal}</div><div class="sport-stat-label">今日卡路里</div></div>
+      <div class="sport-stat"><div class="sport-stat-val">${todayMin}</div><div class="sport-stat-label">今日分钟</div></div>
+    </div></div>`;
+
+    // Sport type grid
+    html += `<div class="card"><div class="card-title">选择运动</div><div class="sport-grid">`;
+    this.sportList.forEach(s=>{
+      const sel = this.selectedSport === s.id;
+      html += `<div class="sport-card${sel?' selected':''}" onclick="PBX.Sport.selectSport('${s.id}')">
+        <div class="sport-icon">${s.icon}</div>
+        <div class="sport-name">${s.name}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+
+    // Sport form
+    if(this.selectedSport){
+      const sport = this.sportList.find(s=>s.id===this.selectedSport);
+      html += `<div class="card"><div class="sport-form show">
+        <div class="card-title">${sport.icon} ${sport.name}打卡</div>
+        <div class="form-group"><label class="form-label">时长(分钟)</label><input type="number" id="sportDuration" min="1" max="999" placeholder="输入时长"></div>
+        <div style="font-size:12px;color:#888;margin-bottom:8px">预估卡路里: <span id="sportCalEst">0</span> kcal (约${sport.calPerMin}kcal/min)</div>
+        <button class="btn btn-primary" onclick="PBX.Sport.addRecord()">打卡记录</button>
+      </div></div>`;
+      // Bind estimate
+      setTimeout(()=>{
+        const inp = document.getElementById('sportDuration');
+        if(inp) inp.oninput = ()=>{
+          const val = parseInt(inp.value)||0;
+          document.getElementById('sportCalEst').textContent = val * sport.calPerMin;
+        };
+      },50);
+    }
+
+    // Heatmap
+    html += `<div class="card"><div class="card-title">本周打卡热力图</div><div class="sport-heatmap">${this.renderHeatmap()}</div></div>`;
+
+    // Today log
+    html += `<div class="card"><div class="card-title">今日记录</div><div class="sport-log">`;
+    if(todayRecords.length===0){
+      html += `<div style="text-align:center;padding:12px;color:#888;font-size:13px">今日暂无运动记录</div>`;
+    } else {
+      todayRecords.forEach(r=>{
+        const sport = this.sportList.find(s=>s.id===r.type);
+        html += `<div class="sport-log-item">
+          <span>${sport?sport.icon:''} ${sport?sport.name:r.type}</span>
+          <span>${r.duration_min}分钟 / ${r.calories}kcal</span>
+          <button class="btn btn-sm btn-danger" onclick="PBX.Sport.deleteRecord('${r.id}')">✕</button>
+        </div>`;
+      });
+    }
+    html += `</div></div>`;
+    panel.innerHTML = html;
+  },
+
+  selectSport(id){
+    this.selectedSport = id;
+    this.render();
+  },
+
+  addRecord(){
+    if(!this.selectedSport) return;
+    const duration = parseInt(document.getElementById('sportDuration').value)||0;
+    if(duration<=0){ PBX.Modal.alert('请输入有效时长'); return; }
+    const sport = this.sportList.find(s=>s.id===this.selectedSport);
+    const calories = duration * sport.calPerMin;
+    const sportData = PBX.Storage.getSport();
+    const todayStr = PBX.today();
+    if(!sportData[todayStr]) sportData[todayStr] = [];
+    sportData[todayStr].push({
+      id: PBX.uid(),
+      type: this.selectedSport,
+      duration_min: duration,
+      calories,
+      createdAt: new Date().toISOString()
+    });
+    PBX.Storage.setSport(sportData);
+    this.selectedSport = null;
+    PBX.Modal.toast('运动打卡成功 ✓');
+    this.render();
+  },
+
+  deleteRecord(id){
+    PBX.Modal.confirm('确定删除此记录？',()=>{
+      const sportData = PBX.Storage.getSport();
+      const todayStr = PBX.today();
+      sportData[todayStr] = (sportData[todayStr]||[]).filter(r=>r.id!==id);
+      if(sportData[todayStr].length===0) delete sportData[todayStr];
+      PBX.Storage.setSport(sportData);
+      PBX.Sport.render();
+    });
+  },
+
+  calcStreak(){
+    const sportData = PBX.Storage.getSport();
+    let streak = 0;
+    const d = new Date();
+    while(true){
+      const ds = PBX.dateStr(d);
+      if(sportData[ds] && sportData[ds].length > 0){
+        streak++;
+        d.setDate(d.getDate()-1);
+      } else {
+        // If today has no record yet, check yesterday
+        if(streak===0 && PBX.isSameDay(d,new Date())){
+          d.setDate(d.getDate()-1);
+          continue;
+        }
+        break;
+      }
+    }
+    return streak;
+  },
+
+  renderHeatmap(){
+    const sportData = PBX.Storage.getSport();
+    // Get current week dates (Mon-Sun)
+    const today = new Date();
+    const dayOfWeek = (today.getDay()+6)%7;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - dayOfWeek);
+    const weekDates = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate()+i);
+      weekDates.push(PBX.dateStr(d));
+    }
+
+    let html = '<div class="heatmap-grid">';
+    weekDates.forEach((ds,i)=>{
+      const records = sportData[ds]||[];
+      const totalMin = records.reduce((s,r)=>s+r.duration_min,0);
+      let level = '';
+      if(totalMin>=60) level='lv4';
+      else if(totalMin>=30) level='lv3';
+      else if(totalMin>=10) level='lv2';
+      else if(totalMin>0) level='lv1';
+      html += `<div class="heatmap-cell ${level}">${totalMin>0?totalMin+'m':''}</div>`;
+    });
+    html += '</div><div class="heatmap-labels">';
+    PBX.weekDayNames.forEach(n=> html += `<div class="heatmap-label">${n}</div>`);
+    html += '</div>';
+    return html;
+  }
+};
+
+// === REVIEW MODULE ===
+PBX.Review = {
+  selectedWeek: PBX.getWeekId(new Date()),
+  fields: [
+    {key:'goalsCompletion',label:'本周目标完成度'},
+    {key:'unfinishedReasons',label:'未完成任务原因'},
+    {key:'growthReflection',label:'个人成长感悟'},
+    {key:'improvementPlan',label:'问题改进方案'},
+    {key:'nextWeekPlan',label:'下周规划'},
+    {key:'leftoverTodo',label:'遗留待办清单'}
+  ],
+
+  render(){
+    const panel = document.getElementById('panelReview');
+    const reviews = PBX.Storage.getReview();
+    const weekId = this.selectedWeek;
+    const review = reviews[weekId] || this.createEmptyReview(weekId);
+    const weekDates = PBX.getWeekDates(weekId);
+    const allWeeks = Object.keys(reviews).sort().reverse();
+
+    let html = '';
+
+    // Week selector
+    html += `<div class="card">
+      <div class="review-selector">
+        <button class="btn btn-sm btn-outline" onclick="PBX.Review.prevWeek()">◀</button>
+        <div class="review-week-nav">
+          <span class="review-week-label">${weekId}</span>
+          <span style="font-size:11px;color:#888">${weekDates[0]} ~ ${weekDates[6]}</span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="PBX.Review.nextWeek()">▶</button>
+        <select style="flex:1;font-size:11px;padding:4px" onchange="PBX.Review.selectWeek(this.value)">
+          <option value="${weekId}" selected>${weekId} (当前周)</option>
+          ${allWeeks.filter(w=>w!==weekId).map(w=>`<option value="${w}">${w} (历史)</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+
+    // Date links
+    html += `<div class="card">
+      <div class="card-title">关联日计划</div>
+      <div class="review-date-links">`;
+    weekDates.forEach(ds=>{
+      html += `<div class="review-date-link" onclick="PBX.Router.goToDate('${ds}')">${ds.slice(5)}</div>`;
+    });
+    html += `</div></div>`;
+
+    // Review fields
+    html += `<div class="card"><div class="card-title">复盘模板</div>`;
+    this.fields.forEach(f=>{
+      html += `<div class="review-field">
+        <div class="review-field-title">${f.label}</div>
+        <textarea id="rev_${f.key}" placeholder="填写${f.label}...">${review[f.key]||''}</textarea>
+      </div>`;
+    });
+    html += `<button class="btn btn-primary" onclick="PBX.Review.save()" style="width:100%;margin-top:8px">保存复盘</button></div>`;
+
+    // Images
+    html += `<div class="card"><div class="card-title">图片附件</div>
+      <div class="review-images" id="reviewImages">`;
+    (review.images||[]).forEach(imgRef=>{
+      const imgData = PBX.Storage.getImages()[imgRef];
+      if(imgData){
+        html += `<img class="review-img-thumb" src="${imgData}" onclick="PBX.Review.viewImage('${imgRef}')">`;
+      }
+    });
+    html += `</div>
+      <div style="margin-top:8px">
+        <input type="file" id="revImgInput" accept="image/*" style="font-size:12px" onchange="PBX.Review.addImage()">
+      </div>
+    </div>`;
+
+    panel.innerHTML = html;
+  },
+
+  createEmptyReview(weekId){
+    const r = {};
+    this.fields.forEach(f=> r[f.key] = '');
+    r.images = [];
+    return r;
+  },
+
+  save(){
+    const reviews = PBX.Storage.getReview();
+    const weekId = this.selectedWeek;
+    if(!reviews[weekId]) reviews[weekId] = this.createEmptyReview(weekId);
+    this.fields.forEach(f=>{
+      const el = document.getElementById('rev_'+f.key);
+      reviews[weekId][f.key] = el ? el.value : '';
+    });
+    PBX.Storage.setReview(reviews);
+    PBX.Modal.toast('复盘已保存 ✓');
+  },
+
+  prevWeek(){
+    const dates = PBX.getWeekDates(this.selectedWeek);
+    const prevMon = PBX.parseDate(dates[0]);
+    prevMon.setDate(prevMon.getDate()-7);
+    this.selectedWeek = PBX.getWeekId(prevMon);
+    this.render();
+  },
+
+  nextWeek(){
+    const dates = PBX.getWeekDates(this.selectedWeek);
+    const nextMon = PBX.parseDate(dates[0]);
+    nextMon.setDate(nextMon.getDate()+7);
+    this.selectedWeek = PBX.getWeekId(nextMon);
+    this.render();
+  },
+
+  selectWeek(wid){
+    this.selectedWeek = wid;
+    this.render();
+  },
+
+  addImage(){
+    const input = document.getElementById('revImgInput');
+    if(!input.files||!input.files[0]) return;
+    const file = input.files[0];
+    // Compress with canvas
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        const maxW = 400;
+        const maxH = 400;
+        let w = img.width, h = img.height;
+        if(w>maxW){h*=maxW/w;w=maxW;}
+        if(h>maxH){w*=maxH/h;h=maxH;}
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const dataUrl = canvas.toDataURL('image/jpeg',0.6);
+        const imgRef = 'img_'+PBX.uid();
+        const images = PBX.Storage.getImages();
+        images[imgRef] = dataUrl;
+        PBX.Storage.setImages(images);
+        // Add ref to review
+        const reviews = PBX.Storage.getReview();
+        const weekId = this.selectedWeek;
+        if(!reviews[weekId]) reviews[weekId] = this.createEmptyReview(weekId);
+        if(!reviews[weekId].images) reviews[weekId].images = [];
+        reviews[weekId].images.push(imgRef);
+        PBX.Storage.setReview(reviews);
+        this.render();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
+
+  viewImage(imgRef){
+    const imgData = PBX.Storage.getImages()[imgRef];
+    if(!imgData) return;
+    PBX.Modal.show(`<img src="${imgData}" style="width:100%;border-radius:8px"><div class="modal-actions">
+      <button class="btn btn-outline" onclick="PBX.Modal.hide()">关闭</button>
+      <button class="btn btn-danger" onclick="PBX.Review.removeImage('${imgRef}')">删除</button>
+    </div>`);
+  },
+
+  removeImage(imgRef){
+    const reviews = PBX.Storage.getReview();
+    const weekId = this.selectedWeek;
+    if(reviews[weekId] && reviews[weekId].images){
+      reviews[weekId].images = reviews[weekId].images.filter(r=>r!==imgRef);
+      PBX.Storage.setReview(reviews);
+    }
+    const images = PBX.Storage.getImages();
+    delete images[imgRef];
+    PBX.Storage.setImages(images);
+    PBX.Modal.hide();
+    this.render();
+  }
+};
+
+// === ALARM MODULE ===
+PBX.Alarm = {
+  checkInterval: null,
+  popupAlarmId: null,
+  batchSelectAll: false,
+
+  render(){
+    const panel = document.getElementById('panelAlarm');
+    const alarms = PBX.Storage.getAlarms();
+    const now = new Date();
+
+    // Categorize alarms - improved logic
+    const upcoming = [], triggered = [], expired = [];
+    alarms.forEach(a=>{
+      if(!a.enabled && a.triggered && a.triggered.length > 0){
+        // Already triggered and disabled = completed (single alarm ran)
+        triggered.push(a);
+      } else if(!a.enabled){
+        // Disabled without trigger = expired/closed
+        expired.push(a);
+      } else if(a.triggered && a.triggered.length > 0 && a.repeat !== 'once'){
+        // Repeating alarms that triggered today are still active, show in triggered section
+        triggered.push(a);
+      } else {
+        upcoming.push(a);
+      }
+    });
+
+    let html = '';
+
+    // Create form
+    html += `<div class="card"><div class="card-title">创建提醒</div>
+      <div class="alarm-form">
+        <div class="form-group"><label class="form-label">提醒名称</label><input type="text" id="alarmName" placeholder="输入名称"></div>
+        <div class="alarm-form-row">
+          <div class="form-group" style="flex:1"><label class="form-label">时间</label><input type="time" id="alarmTime" value="08:00"></div>
+        </div>
+        <div class="form-group"><label class="form-label">重复周期</label>
+          <div class="alarm-repeat-options" id="alarmRepeatOptions">
+            <div class="alarm-repeat-opt selected" data-val="once" onclick="PBX.Alarm.pickRepeat('once',this)">单次</div>
+            <div class="alarm-repeat-opt" data-val="daily" onclick="PBX.Alarm.pickRepeat('daily',this)">每天</div>
+            <div class="alarm-repeat-opt" data-val="weekly" onclick="PBX.Alarm.pickRepeat('weekly',this)">每周</div>
+            <div class="alarm-repeat-opt" data-val="workday" onclick="PBX.Alarm.pickRepeat('workday',this)">工作日</div>
+          </div>
+        </div>
+        <div class="form-group" id="alarmWeekDayPicks" style="display:none"><label class="form-label">选择星期</label>
+          <div class="alarm-weekday-picks">
+            ${PBX.weekDayNames.map((n,i)=>`<div class="alarm-wd" data-day="${i+1}" onclick="PBX.Alarm.toggleWD(this)">${n}</div>`).join('')}
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">备注</label><textarea id="alarmNote" placeholder="可选备注..." style="min-height:40px"></textarea></div>
+        <button class="btn btn-primary" onclick="PBX.Alarm.create()" style="width:100%">创建提醒</button>
+      </div>
+    </div>`;
+
+    // Alarm sections
+    const renderSection = (title, items, type) => {
+      let secHtml = `<div class="alarm-section"><div class="alarm-section-title">
+        ${title} (${items.length})
+        <div style="display:flex;gap:4px">
+          <label style="font-size:10px;display:flex;align-items:center;gap:2px"><input type="checkbox" onchange="PBX.Alarm.batchSelect('${type}',this.checked)">全选</label>
+        </div>
+      </div>`;
+      if(items.length===0){
+        secHtml += `<div class="alarm-empty">暂无</div>`;
+      } else {
+        items.forEach(a=>{
+          const timeStr = `${String(a.hour).padStart(2,'0')}:${String(a.minute).padStart(2,'0')}`;
+          const repeatLabel = a.repeat==='once'?'单次':a.repeat==='daily'?'每天':a.repeat==='weekly'?'每周':a.repeat==='workday'?'工作日':'';
+          const wdLabel = a.weekDays ? a.weekDays.map(d=>PBX.weekDayNames[d-1]).join(',') : '';
+          secHtml += `<div class="alarm-item">
+            <input type="checkbox" class="alarm-check" data-id="${a.id}" data-type="${type}">
+            <div class="alarm-info">
+              <div class="alarm-time">${timeStr}</div>
+              <div class="alarm-name">${a.name}</div>
+              <div class="alarm-note">${repeatLabel}${wdLabel?'('+wdLabel+')':''}${a.note?' · '+a.note:''}</div>
+            </div>
+            <div class="alarm-toggle${a.enabled?' on':''}" onclick="PBX.Alarm.toggleEnable('${a.id}')">
+              <div class="toggle-dot"></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="PBX.Alarm.deleteOne('${a.id}')">✕</button>
+          </div>`;
+        });
+      }
+      secHtml += `<div class="alarm-batch-actions">
+        <button class="btn btn-sm btn-green" onclick="PBX.Alarm.batchToggle('${type}',true)">批量开启</button>
+        <button class="btn btn-sm btn-outline" onclick="PBX.Alarm.batchToggle('${type}',false)">批量关闭</button>
+        <button class="btn btn-sm btn-danger" onclick="PBX.Alarm.batchDelete('${type}')">批量删除</button>
+      </div></div>`;
+      return secHtml;
+    };
+
+    html += renderSection('⏳ 未触发', upcoming, 'upcoming');
+    html += renderSection('✅ 已完成', triggered, 'triggered');
+    html += renderSection('⏹ 过期/关闭', expired, 'expired');
+
+    panel.innerHTML = html;
+  },
+
+  _repeatVal: 'once',
+  _weekDays: [],
+
+  pickRepeat(val, el){
+    this._repeatVal = val;
+    document.querySelectorAll('#alarmRepeatOptions .alarm-repeat-opt').forEach(e=>e.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('alarmWeekDayPicks').style.display = val==='weekly'?'block':'none';
+  },
+
+  toggleWD(el){
+    const day = parseInt(el.dataset.day);
+    el.classList.toggle('selected');
+    this._weekDays = [];
+    document.querySelectorAll('.alarm-wd.selected').forEach(e=> this._weekDays.push(parseInt(e.dataset.day)));
+  },
+
+  create(){
+    const name = document.getElementById('alarmName').value.trim();
+    if(!name){ PBX.Modal.alert('请输入提醒名称'); return; }
+    const time = document.getElementById('alarmTime').value;
+    const [hour, minute] = time.split(':').map(Number);
+    const note = document.getElementById('alarmNote').value.trim();
+    const alarms = PBX.Storage.getAlarms();
+    alarms.push({
+      id: PBX.uid(),
+      name,
+      hour,
+      minute,
+      repeat: this._repeatVal,
+      weekDays: this._repeatVal==='weekly'?this._weekDays:[],
+      note,
+      enabled: true,
+      triggered: [],
+      snoozeUntil: null
+    });
+    PBX.Storage.setAlarms(alarms);
+    this._repeatVal = 'once';
+    this._weekDays = [];
+    this.render();
+  },
+
+  toggleEnable(id){
+    const alarms = PBX.Storage.getAlarms();
+    const a = alarms.find(a=>a.id===id);
+    if(!a) return;
+    a.enabled = !a.enabled;
+    PBX.Storage.setAlarms(alarms);
+    this.render();
+  },
+
+  deleteOne(id){
+    PBX.Modal.confirm('确定删除此提醒？',()=>{
+      const alarms = PBX.Storage.getAlarms().filter(a=>a.id!==id);
+      PBX.Storage.setAlarms(alarms);
+      PBX.Alarm.render();
+    });
+  },
+
+  batchSelect(type, checked){
+    document.querySelectorAll(`.alarm-check[data-type="${type}"]`).forEach(el=> el.checked = checked);
+  },
+
+  batchToggle(type, enable){
+    const ids = [];
+    document.querySelectorAll(`.alarm-check[data-type="${type}"]:checked`).forEach(el=> ids.push(el.dataset.id));
+    if(ids.length===0){ PBX.Modal.alert('请先选择提醒'); return; }
+    const alarms = PBX.Storage.getAlarms();
+    ids.forEach(id=>{
+      const a = alarms.find(a=>a.id===id);
+      if(a) a.enabled = enable;
+    });
+    PBX.Storage.setAlarms(alarms);
+    this.render();
+  },
+
+  batchDelete(type){
+    const ids = [];
+    document.querySelectorAll(`.alarm-check[data-type="${type}"]:checked`).forEach(el=> ids.push(el.dataset.id));
+    if(ids.length===0){ PBX.Modal.alert('请先选择提醒'); return; }
+    PBX.Modal.confirm(`确定删除选中的${ids.length}个提醒？`,()=>{
+      const alarms = PBX.Storage.getAlarms().filter(a=>!ids.includes(a.id));
+      PBX.Storage.setAlarms(alarms);
+      PBX.Alarm.render();
+    });
+  },
+
+  startCheck(){
+    if(this.checkInterval) return;
+    this.checkInterval = setInterval(()=> this.check(), 1000);
+    // Also check on visibility change (tab comes back)
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden) this.check();
+    });
+  },
+
+  check(){
+    const now = new Date();
+    const curHour = now.getHours();
+    const curMin = now.getMinutes();
+    const curDay = now.getDay() || 7; // 1=Mon..7=Sun
+    const alarms = PBX.Storage.getAlarms();
+
+    alarms.forEach(a=>{
+      if(!a.enabled) return;
+      // Check snooze
+      if(a.snoozeUntil){
+        const sd = new Date(a.snoozeUntil);
+        if(now >= sd){
+          this.fireAlarm(a);
+          a.snoozeUntil = null;
+          PBX.Storage.setAlarms(alarms);
+        }
+        return;
+      }
+      if(a.hour !== curHour || a.minute !== curMin) return;
+      // Already triggered this minute?
+      const triggerKey = `${curHour}:${curMin}:${PBX.today()}`;
+      if(a.triggered && a.triggered.includes(triggerKey)) return;
+
+      // Check repeat rules
+      if(a.repeat === 'once'){
+        this.fireAlarm(a);
+        a.triggered.push(triggerKey);
+        a.enabled = false;
+      } else if(a.repeat === 'daily'){
+        this.fireAlarm(a);
+        a.triggered.push(triggerKey);
+      } else if(a.repeat === 'weekly'){
+        if(a.weekDays && a.weekDays.includes(curDay)){
+          this.fireAlarm(a);
+          a.triggered.push(triggerKey);
+        }
+      } else if(a.repeat === 'workday'){
+        if(curDay >= 1 && curDay <= 5){
+          this.fireAlarm(a);
+          a.triggered.push(triggerKey);
+        }
+      }
+      PBX.Storage.setAlarms(alarms);
+    });
+  },
+
+  fireAlarm(a){
+    this.popupAlarmId = a.id;
+    document.getElementById('apTime').textContent = `${String(a.hour).padStart(2,'0')}:${String(a.minute).padStart(2,'0')}`;
+    document.getElementById('apName').textContent = a.name;
+    document.getElementById('apNote').textContent = a.note || '';
+    document.getElementById('alarmPopup').classList.add('show');
+    // Play beep sound using Web Audio API
+    this.playBeep();
+    // Also try Notification API if permitted
+    if('Notification' in window && Notification.permission === 'granted'){
+      new Notification(`PBX提醒: ${a.name}`, {body: a.note||`${a.hour}:${a.minute}`, icon:''});
+    }
+  },
+
+  playBeep(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 800;
+      osc.type = 'sine';
+      gain.gain.value = 0.3;
+      osc.start();
+      // Beep pattern: 3 short beeps
+      let t = ctx.currentTime;
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.setValueAtTime(0, t+0.15);
+      gain.gain.setValueAtTime(0.3, t+0.3);
+      gain.gain.setValueAtTime(0, t+0.45);
+      gain.gain.setValueAtTime(0.3, t+0.6);
+      gain.gain.setValueAtTime(0, t+0.75);
+      osc.stop(t+1);
+    }catch(e){}
+  },
+
+  dismissPopup(){
+    document.getElementById('alarmPopup').classList.remove('show');
+    this.popupAlarmId = null;
+  },
+
+  snoozePopup(){
+    const alarms = PBX.Storage.getAlarms();
+    const a = alarms.find(a=>a.id===this.popupAlarmId);
+    if(a){
+      const snoozeTime = new Date();
+      snoozeTime.setMinutes(snoozeTime.getMinutes()+10);
+      a.snoozeUntil = snoozeTime.toISOString();
+      PBX.Storage.setAlarms(alarms);
+    }
+    this.dismissPopup();
+  }
+};
+
+// === ANALYSIS MODULE ===
+PBX.Analysis = {
+  show(){
+    const tasks = PBX.Storage.getTasks();
+    const sportData = PBX.Storage.getSport();
+    const reviews = PBX.Storage.getReview();
+    const alarms = PBX.Storage.getAlarms();
+    const todayStr = PBX.today();
+
+    // Current week dates
+    const weekDates = PBX.getWeekDates(PBX.getWeekId(new Date()));
+    const weekId = PBX.getWeekId(new Date());
+
+    // Metrics
+    let weekTasksTotal = 0, weekTasksCompleted = 0;
+    let weekSportSessions = 0, weekSportCal = 0, weekSportMin = 0;
+    weekDates.forEach(ds=>{
+      const dt = tasks[ds]||[];
+      weekTasksTotal += dt.length;
+      weekTasksCompleted += dt.filter(t=>t.status==='completed').length;
+      const sr = sportData[ds]||[];
+      weekSportSessions += sr.length;
+      weekSportCal += sr.reduce((s,r)=>s+r.calories,0);
+      weekSportMin += sr.reduce((s,r)=>s+r.duration_min,0);
+    });
+
+    const streak = PBX.Sport.calcStreak();
+    const hasReview = !!reviews[weekId];
+    const enabledAlarms = alarms.filter(a=>a.enabled).length;
+    const expiredAlarms = alarms.filter(a=>!a.enabled).length;
+
+    const taskPct = weekTasksTotal ? Math.round(weekTasksCompleted/weekTasksTotal*100) : 0;
+    const highPending = weekDates.reduce((s,ds)=>{
+      return s + (tasks[ds]||[]).filter(t=>t.priority==='high'&&t.status!=='completed').length;
+    },0);
+
+    // Morning tasks check
+    let morningCount = 0, totalSlotCount = 0;
+    weekDates.forEach(ds=>{
+      (tasks[ds]||[]).forEach(t=>{
+        if(t.timeSlot){
+          totalSlotCount++;
+          const h = parseInt(t.timeSlot.split(':')[0]);
+          if(h<12) morningCount++;
+        }
+      });
+    });
+    const morningPct = totalSlotCount ? Math.round(morningCount/totalSlotCount*100) : 0;
+
+    // Build metrics HTML
+    let html = `<div class="modal-title">📊 周度数据分析</div>`;
+
+    html += `<div class="analysis-card" style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--pink-deep)">数据汇总 (${weekDates[0]} ~ ${weekDates[6]})</div>
+      <div class="analysis-metric"><span class="am-label">任务完成率</span><span class="am-val">${taskPct}% (${weekTasksCompleted}/${weekTasksTotal})</span></div>
+      <div class="analysis-metric"><span class="am-label">运动次数</span><span class="am-val">${weekSportSessions}次</span></div>
+      <div class="analysis-metric"><span class="am-label">运动时长</span><span class="am-val">${weekSportMin}分钟</span></div>
+      <div class="analysis-metric"><span class="am-label">消耗卡路里</span><span class="am-val">${weekSportCal}kcal</span></div>
+      <div class="analysis-metric"><span class="am-label">连续打卡</span><span class="am-val">${streak}天</span></div>
+      <div class="analysis-metric"><span class="am-label">本周复盘</span><span class="am-val">${hasReview?'✓ 已完成':'✗ 未完成'}</span></div>
+      <div class="analysis-metric"><span class="am-label">活跃提醒</span><span class="am-val">${enabledAlarms}个</span></div>
+      <div class="analysis-metric"><span class="am-label">过期提醒</span><span class="am-val">${expiredAlarms}个</span></div>
+    </div>`;
+
+    // AI Insights (Rule Engine)
+    html += `<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--pink-deep)">💡 AI 洞察建议</div>`;
+    const insights = this.generateInsights({
+      taskPct, weekTasksTotal, weekTasksCompleted, weekSportSessions, weekSportCal,
+      streak, hasReview, enabledAlarms, expiredAlarms, highPending, morningPct, weekSportMin
+    });
+    insights.forEach(ins=>{
+      html += `<div class="insight-item ${ins.type}">${ins.icon} ${ins.text}</div>`;
+    });
+
+    html += `<div class="modal-actions"><button class="btn btn-primary" onclick="PBX.Modal.hide()">关闭</button></div>`;
+    PBX.Modal.show(html);
+  },
+
+  generateInsights(data){
+    const insights = [];
+    // R1: High completion rate
+    if(data.taskPct >= 90 && data.weekTasksTotal > 0){
+      insights.push({type:'good',icon:'🌟',text:`本周任务完成率${data.taskPct}%，高效产出！继续保持这个节奏。`});
+    }
+    // R2: Low completion rate
+    if(data.taskPct < 50 && data.weekTasksTotal > 0){
+      insights.push({type:'warn',icon:'⚡',text:`完成率仅${data.taskPct}%，建议聚焦高优任务，减少低优先级事项。`});
+    }
+    // R3: Long streak
+    if(data.streak >= 5){
+      insights.push({type:'good',icon:'🔥',text:`连续运动${data.streak}天，毅力满分！保持运动习惯对身心健康很有帮助。`});
+    }
+    // R4: Insufficient sport
+    if(data.weekSportSessions < 2){
+      insights.push({type:'alert',icon:'💪',text:`本周仅运动${data.weekSportSessions}次，建议增加运动频率，每周至少3次。`});
+    }
+    // R5: High priority backlog
+    if(data.highPending >= 3){
+      insights.push({type:'warn',icon:'🎯',text:`有${data.highPending}个高优任务未完成，建议优先处理，避免堆积影响整体进度。`});
+    }
+    // R6: No review
+    if(!data.hasReview){
+      insights.push({type:'warn',icon:'📝',text:'本周未做复盘。定期回顾有助于发现问题、总结经验，建议尽快完成。'});
+    }
+    // R7: Many expired alarms
+    if(data.expiredAlarms >= 3){
+      insights.push({type:'warn',icon:'⏰',text:`有${data.expiredAlarms}个过期提醒，建议清理无用提醒，保持提醒中心整洁。`});
+    }
+    // R8: Calorie achievement
+    if(data.weekSportCal >= 2000){
+      insights.push({type:'good',icon:'🎉',text:`本周消耗${data.weekSportCal}卡路里，运动达标！合理运动是健康生活的基础。`});
+    }
+    // R9: All modules active
+    if(data.weekTasksTotal > 0 && data.weekSportSessions > 0 && data.hasReview && data.enabledAlarms > 0){
+      insights.push({type:'good',icon:'✨',text:'四个模块都在使用，全面均衡的工作台习惯，值得表扬！'});
+    }
+    // R10: Morning concentration
+    if(data.morningPct >= 70 && data.morningPct > 0){
+      insights.push({type:'warn',icon:'🌅',text:`${data.morningPct}%的时段任务集中在上午，建议合理分配到下午，避免上午过载。`});
+    }
+    // Default if no insights
+    if(insights.length === 0){
+      insights.push({type:'good',icon:'💡',text:'数据记录较少，坚持使用各模块后将获得更有价值的洞察建议。'});
+    }
+    return insights;
+  }
+};
+
+// === BACKUP MODULE ===
+PBX.Backup = {
+  show(){
+    const currentSize = Math.round(PBX.Storage.getSize()/1024);
+    let html = `<div class="modal-title">💾 数据备份</div>
+      <div style="text-align:center;margin-bottom:12px;font-size:13px;color:#888">
+        当前数据大小: ${currentSize} KB
+      </div>
+      <div class="modal-actions" style="flex-direction:column;gap:12px">
+        <button class="btn btn-primary" onclick="PBX.Backup.exportData()" style="width:100%">📤 导出备份(JSON)</button>
+        <div style="width:100%">
+          <label class="btn btn-green" style="width:100%;cursor:pointer">📥 导入备份
+            <input type="file" accept=".json" style="display:none" onchange="PBX.Backup.importData(this)">
+          </label>
+        </div>
+        <button class="btn btn-danger" onclick="PBX.Backup.clearData()" style="width:100%">🗑 清除所有数据</button>
+      </div>
+      <div class="modal-actions" style="margin-top:12px"><button class="btn btn-outline" onclick="PBX.Modal.hide()">关闭</button></div>`;
+    PBX.Modal.show(html);
+  },
+
+  exportData(){
+    const data = {
+      pbx_tasks: PBX.Storage.getTasks(),
+      pbx_sport: PBX.Storage.getSport(),
+      pbx_review: PBX.Storage.getReview(),
+      pbx_alarms: PBX.Storage.getAlarms(),
+      pbx_images: PBX.Storage.getImages(),
+      exportTime: new Date().toISOString(),
+      version: '1.0'
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `PBX_backup_${PBX.today()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    PBX.Modal.alert('备份已导出 ✓');
+  },
+
+  importData(input){
+    if(!input.files||!input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{
+        const data = JSON.parse(e.target.result);
+        if(data.pbx_tasks) PBX.Storage.setTasks(data.pbx_tasks);
+        if(data.pbx_sport) PBX.Storage.setSport(data.pbx_sport);
+        if(data.pbx_review) PBX.Storage.setReview(data.pbx_review);
+        if(data.pbx_alarms) PBX.Storage.setAlarms(data.pbx_alarms);
+        if(data.pbx_images) PBX.Storage.setImages(data.pbx_images);
+        PBX.Modal.hide();
+        PBX.Modal.alert('数据已导入 ✓ 页面将刷新');
+        setTimeout(()=> location.reload(), 1500);
+      }catch(err){
+        PBX.Modal.alert('导入失败: 文件格式不正确');
+      }
+    };
+    reader.readAsText(file);
+  },
+
+  clearData(){
+    PBX.Modal.confirm('⚠️ 确定清除所有数据？此操作不可恢复！',()=>{
+      localStorage.removeItem('pbx_tasks');
+      localStorage.removeItem('pbx_sport');
+      localStorage.removeItem('pbx_review');
+      localStorage.removeItem('pbx_alarms');
+      localStorage.removeItem('pbx_images');
+      PBX.Modal.hide();
+      location.reload();
+    });
+  }
+};
+
+// === PWA ===
+PBX.initPWA = function(){
+  // Register Service Worker
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js').then(reg=>{
+      console.log('SW registered:', reg.scope);
+    }).catch(err=>{
+      console.log('SW registration failed:', err);
+    });
+  }
+
+  // PWA Install Prompt
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show install banner after 3 seconds
+    setTimeout(()=>{
+      if(deferredPrompt){
+        const banner = document.createElement('div');
+        banner.id = 'installBanner';
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;background:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 -2px 10px rgba(0,0,0,.1);z-index:500;font-size:13px;border-top:2px solid var(--pink)';
+        banner.innerHTML = `<div><strong>安装 PBX 应用</strong><br><span style="font-size:11px;color:#888">添加到主屏幕，离线也能用</span></div><div style="display:flex;gap:8px"><button onclick="PBX.installPWA()" style="padding:8px 16px;background:#ffc0cb;color:#fff;border:none;border-radius:8px;font-size:13px">安装</button><button onclick="document.getElementById('installBanner').remove()" style="padding:8px 12px;background:#eee;border:none;border-radius:8px;font-size:12px">暂不</button></div>`;
+        document.body.appendChild(banner);
+      }
+    }, 3000);
+  });
+
+  PBX.installPWA = function(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(choice=>{
+        if(choice.outcome === 'accepted'){
+          PBX.Modal.toast('PBX已安装到主屏幕 ✓');
+        }
+        deferredPrompt = null;
+        const banner = document.getElementById('installBanner');
+        if(banner) banner.remove();
+      });
+    }
+  };
+};
+
+// === INIT ===
+PBX.init = function(){
+  PBX.Plan.init();
+  PBX.Router.init();
+  PBX.Plan.render();
+  PBX.Alarm.startCheck();
+  PBX.initPWA();
+  // Request notification permission
+  if('Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+};
+
+// Run on DOM ready
+document.addEventListener('DOMContentLoaded', PBX.init);
+</script>
+</body>
+</html>
