@@ -33,21 +33,21 @@ body{display:flex;flex-direction:row}
 .panel{display:none}
 .panel.active{display:block}
 .card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
-.card-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.card-title{font-size:17px;font-weight:600;margin-bottom:12px;color:var(--text)}
 
 /* === COMMON === */
-.btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 16px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;min-height:36px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 18px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:15px;font-weight:500;transition:all .2s;min-height:40px}
 .btn-primary{background:var(--pink);color:#fff}.btn-primary:hover{background:var(--pink-mid)}
 .btn-green{background:var(--active);color:var(--text)}.btn-green:hover{background:var(--green-mid)}
 .btn-danger{background:#f8d7da;color:#721c24}.btn-danger:hover{background:#f5c6cb}
-.btn-sm{padding:4px 10px;font-size:11px;min-height:28px}
+.btn-sm{padding:6px 12px;font-size:13px;min-height:32px}
 .btn-outline{background:transparent;border:1px solid var(--pink);color:var(--pink-deep)}
-input[type=text],input[type=number],input[type=time],textarea,select{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:var(--radius-sm);font-size:16px;background:#fff;color:var(--text);min-height:40px}
+input[type=text],input[type=number],input[type=time],textarea,select{width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:var(--radius-sm);font-size:18px;background:#fff;color:var(--text);min-height:44px}
 textarea{resize:vertical;min-height:80px}
 select{appearance:auto}
 .form-group{margin-bottom:10px}
-.form-label{font-size:14px;font-weight:500;margin-bottom:5px;display:block}
-.tag{display:inline-block;padding:3px 10px;border-radius:10px;font-size:13px;font-weight:500}
+.form-label{font-size:16px;font-weight:500;margin-bottom:6px;display:block}
+.tag{display:inline-block;padding:4px 12px;border-radius:10px;font-size:15px;font-weight:500}
 .tag-high{background:#f8d7da;color:#721c24}
 .tag-mid{background:#fff3cd;color:#856404}
 .tag-low{background:#d4edda;color:#155724}
@@ -66,7 +66,7 @@ select{appearance:auto}
 .plan-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .plan-progress{display:flex;align-items:center;gap:10px}
 .progress-ring{width:50px;height:50px}
-.progress-text{font-size:14px;font-weight:500}
+.progress-text{font-size:16px;font-weight:500}
 .view-toggle{display:flex;gap:4px}
 .view-toggle .btn{padding:4px 10px;font-size:11px}
 
@@ -103,7 +103,7 @@ select{appearance:auto}
 .tl-slot{padding:6px 4px;border-radius:var(--radius-sm);background:#f8f9fa;font-size:10px;cursor:pointer;min-height:44px;transition:background .2s;position:relative}
 .tl-slot:hover{background:var(--pink);opacity:.6}
 .tl-slot .tl-time{font-weight:600;color:#888}
-.tl-slot .tl-task{font-size:12px;color:var(--text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-slot .tl-task{font-size:14px;color:var(--text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tl-slot.has-task{background:var(--active)}
 
 /* Task list */
@@ -114,7 +114,7 @@ select{appearance:auto}
 .task-check{width:24px;height:24px;border-radius:50%;border:2px solid #ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .task-check.checked{background:var(--green-mid);border-color:var(--green-mid);color:#fff;font-size:14px}
 .task-info{flex:1;min-width:0}
-.task-text{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.task-text{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .task-meta{display:flex;gap:4px;margin-top:3px;align-items:center}
 .task-status-btn{padding:2px 6px;border-radius:8px;font-size:10px;cursor:pointer;border:1px solid #ddd;background:#fff}
 .task-actions{display:flex;gap:4px;flex-shrink:0}
@@ -470,23 +470,10 @@ PBX.Plan = {
     // Calendar
     html += `<div class="card"><div class="calendar">${this.renderCalendar()}</div></div>`;
 
-    // Timeline (day view only)
-    if(this.viewMode === 'day'){
-      html += `<div class="card"><div class="timeline">
-        <div class="timeline-header">时间轴 ${dt}</div>
-        <div class="timeline-grid">${this.renderTimeline()}</div>
-      </div></div>`;
-    }
-
-    // Week overview (week view)
-    if(this.viewMode === 'week'){
-      html += `<div class="card">${this.renderWeekView()}</div>`;
-    }
-
-    // Task list
+    // Task list (moved above timeline, right after calendar)
     html += `<div class="card"><div class="card-title">任务列表</div><div class="task-list">`;
     if(dayTasks.length === 0){
-      html += `<div style="text-align:center;padding:20px;color:#888;font-size:13px">暂无任务，点击 + 添加</div>`;
+      html += `<div style="text-align:center;padding:20px;color:#888;font-size:15px">暂无任务，点击 + 添加</div>`;
     } else {
       // Sort: pending first, then in_progress, then completed; within each, high priority first
       const sorted = [...dayTasks].sort((a,b)=>{
@@ -518,6 +505,20 @@ PBX.Plan = {
       });
     }
     html += `</div></div>`;
+
+    // Timeline (day view only) - now after task list
+    if(this.viewMode === 'day'){
+      html += `<div class="card"><div class="timeline">
+        <div class="timeline-header">时间轴 ${dt}</div>
+        <div class="timeline-grid">${this.renderTimeline()}</div>
+      </div></div>`;
+    }
+
+    // Week overview (week view) - now after task list
+    if(this.viewMode === 'week'){
+      html += `<div class="card">${this.renderWeekView()}</div>`;
+    }
+
     panel.innerHTML = html;
   },
 
